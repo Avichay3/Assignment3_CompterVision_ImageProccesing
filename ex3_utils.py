@@ -361,41 +361,22 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     :return: warp image 2 according to T and display both image1
     and the wrapped version of the image2 in the same figure.
     """
-    # Calculate the inverse of the given matrix
+    # calculate inverse of the given transformation matrix
     T_inv = np.linalg.inv(T)
+    # create a meshgrid for the coordinates of the warped image
+    y, x = np.indices(im2.shape[:2])
+    mapped_coords = np.vstack([x.ravel(), y.ravel(), np.ones_like(x.ravel())])
 
-    # Create a blank canvas for the warped image
-    warped_im2 = np.zeros(im2.shape, dtype=np.float)
+    # Transform the coordinates using the inverse matrix
+    mapped_coords_transformed = np.dot(T_inv, mapped_coords)
+    mapped_coords_transformed /= mapped_coords_transformed[2]
 
-    # Iterate over each pixel in the warped image
-    for y in range(im2.shape[0]):
-        for x in range(im2.shape[1]):
-            # Calculate the homogeneous coordinates of the pixel
-            p = np.array([x, y, 1], dtype=np.float)
-            p_transformed = np.dot(T_inv, p)
+    # Extract the transformed x and y coordinates
+    x_transformed = mapped_coords_transformed[0].reshape(im2.shape[:2])
+    y_transformed = mapped_coords_transformed[1].reshape(im2.shape[:2])
 
-            # Normalize the homogeneous coordinates
-            p_transformed /= p_transformed[2]
-
-            # Extract the normalized x and y coordinates
-            x_transformed = p_transformed[0]
-            y_transformed = p_transformed[1]
-
-            # Calculate the integer and fractional parts of the coordinates
-            x_int = int(x_transformed)
-            y_int = int(y_transformed)
-            dx = x_transformed - x_int
-            dy = y_transformed - y_int
-
-            # Perform bilinear interpolation
-            if 0 <= x_int < im1.shape[1] - 1 and 0 <= y_int < im1.shape[0] - 1:
-                warped_im2[y, x] = (1 - dx) * (1 - dy) * im1[y_int, x_int] \
-                                   + dx * (1 - dy) * im1[y_int, x_int + 1] \
-                                   + (1 - dx) * dy * im1[y_int + 1, x_int] \
-                                   + dx * dy * im1[y_int + 1, x_int + 1]
-            else:
-                warped_im2[y, x] = im1[int(y_transformed), int(x_transformed)]
-
+    # Perform bilinear interpolation to compute the pixel values in the warped image
+    warped_im2 = cv2.remap(im1, x_transformed.astype(np.float32), y_transformed.astype(np.float32), interpolation=cv2.INTER_LINEAR)
     return warped_im2
 
 
@@ -413,8 +394,8 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     """
     pyrs = [img]  # Create an array to store the pyramid
     for _ in range(1, levels):
-        img = cv2.pyrDown(img)  # Downsample the image using pyrDown function
-        pyrs.append(img)  # Add the downsampled image to the pyramid array
+        img = cv2.pyrDown(img)  # downsample the image using pyrDown function
+        pyrs.append(img)  # add the downsample image to the pyramid array
 
     return pyrs
 
@@ -426,20 +407,19 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Laplacian Pyramid (list of images)
     """
-    lap_pyramid = []
-    gauss_pyramid = [img]
-
+    lap_pyramid = []  # create an empty list to store Laplacian pyramid levels
+    gauss_pyramid = [img]  # create a Gaussian pyramid with the original image as the first level
     for _ in range(levels - 1):
-        img = cv2.pyrDown(img)
-        gauss_pyramid.append(img)
+        img = cv2.pyrDown(img)  # reduce the size of the image by half using pyrDown function
+        gauss_pyramid.append(img)  # add the resized image to the Gaussian pyramid
 
     for i in range(levels - 1):
-        expanded_img = cv2.pyrUp(gauss_pyramid[i + 1], dstsize=gauss_pyramid[i].shape[:2])
-        lap_layer = cv2.subtract(gauss_pyramid[i], expanded_img)
-        lap_pyramid.append(lap_layer)
+        expanded_img = cv2.pyrUp(gauss_pyramid[i + 1], dstsize=gauss_pyramid[i].shape[:2])  # upsample the next level using pyrUp
+        lap_layer = cv2.subtract(gauss_pyramid[i], expanded_img)   # calculate the Laplacian layer by subtracting the upsampled image from the current level
+        lap_pyramid.append(lap_layer)  # add the Laplacian layer to the Laplacian pyramid
 
-    lap_pyramid.append(gauss_pyramid[levels - 1])
-    return lap_pyramid
+    lap_pyramid.append(gauss_pyramid[levels - 1])  # add the last level of the Gaussian pyramid to the Laplacian pyramid
+    return lap_pyramid  # return the Laplacian pyramid
 
 
 def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
