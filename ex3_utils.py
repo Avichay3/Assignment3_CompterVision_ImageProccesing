@@ -363,7 +363,42 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     :return: warp image 2 according to T and display both image1
     and the wrapped version of the image2 in the same figure.
     """
-    pass
+    # Calculate the inverse of the given matrix
+    T_inv = np.linalg.inv(T)
+
+    # Create a blank canvas for the warped image
+    warped_im2 = np.zeros(im2.shape, dtype=np.float)
+
+    # Iterate over each pixel in the warped image
+    for y in range(im2.shape[0]):
+        for x in range(im2.shape[1]):
+            # Calculate the homogeneous coordinates of the pixel
+            p = np.array([x, y, 1], dtype=np.float)
+            p_transformed = np.dot(T_inv, p)
+
+            # Normalize the homogeneous coordinates
+            p_transformed /= p_transformed[2]
+
+            # Extract the normalized x and y coordinates
+            x_transformed = p_transformed[0]
+            y_transformed = p_transformed[1]
+
+            # Calculate the integer and fractional parts of the coordinates
+            x_int = int(x_transformed)
+            y_int = int(y_transformed)
+            dx = x_transformed - x_int
+            dy = y_transformed - y_int
+
+            # Perform bilinear interpolation
+            if 0 <= x_int < im1.shape[1] - 1 and 0 <= y_int < im1.shape[0] - 1:
+                warped_im2[y, x] = (1 - dx) * (1 - dy) * im1[y_int, x_int] \
+                                   + dx * (1 - dy) * im1[y_int, x_int + 1] \
+                                   + (1 - dx) * dy * im1[y_int + 1, x_int] \
+                                   + dx * dy * im1[y_int + 1, x_int + 1]
+            else:
+                warped_im2[y, x] = im1[int(y_transformed), int(x_transformed)]
+
+    return warped_im2
 
 
 # ---------------------------------------------------------------------------
