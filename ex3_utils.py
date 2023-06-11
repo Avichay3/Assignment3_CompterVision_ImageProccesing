@@ -7,6 +7,7 @@ from numpy.linalg import LinAlgError
 import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import mean_squared_error
+from typing import List
 
 
 def myID() -> np.int:
@@ -413,7 +414,13 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Gaussian pyramid (list of images)
     """
-    pass
+    pyrs = [img]  # Create an array to store the pyramid
+
+    for _ in range(1, levels):
+        img = cv2.pyrDown(img)  # Downsample the image using pyrDown function
+        pyrs.append(img)  # Add the downsampled image to the pyramid array
+
+    return pyrs
 
 
 def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
