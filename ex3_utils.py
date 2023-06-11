@@ -201,7 +201,6 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     rotated_img = applyRotation(im1, rotation_mat)
     translation_mat = findTranslationLK(rotated_img, im2)
     rigid_mat = combineTransformations(translation_mat, rotation_mat)
-
     return rigid_mat
 
 
@@ -214,9 +213,7 @@ def getRotationMatrix(angle: float) -> np.ndarray:
     angle_rad = math.radians(angle)
     cos_value = math.cos(angle_rad)
     sin_value = math.sin(angle_rad)
-    rotation_mat = np.array([[cos_value, -sin_value, 0],
-                             [sin_value, cos_value, 0],
-                             [0, 0, 1]], dtype=np.float32)
+    rotation_mat = np.array([[cos_value, -sin_value, 0],[sin_value, cos_value, 0],[0, 0, 1]], dtype=np.float32)
     return rotation_mat
 
 
@@ -225,7 +222,6 @@ def applyRotation(img: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
     Apply the rotation transformation to an image.
     param img: Input image
     :param rotation_mat: Rotation transformation matrix
-    :return: Rotated image
     """
     rotated_img = cv2.warpPerspective(img, rotation_mat, img.shape[::-1])
     return rotated_img
@@ -234,9 +230,8 @@ def applyRotation(img: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
 def computeFit(img1: np.ndarray, img2: np.ndarray) -> float:
     """
     Compute the fit between two images using mean squared error.
-    param img1: First image
-    :param img2: Second image
-    :return: Mean squared error fit
+    param img2: Second image , img1: First image
+    :return: Mean squared error
     """
     fit = mean_squared_error(img1, img2)
     return fit
