@@ -1,10 +1,9 @@
-import sys
+
 from typing import List
 
 import numpy as np
 import cv2
 from numpy.linalg import LinAlgError
-import matplotlib.pyplot as plt
 import math
 from sklearn.metrics import mean_squared_error
 from typing import List
@@ -21,7 +20,9 @@ def myID() -> np.int:
 # ------------------------ Lucas Kanade optical flow ------------------------
 # ---------------------------------------------------------------------------
 
-" Write a function which takes an image and returns the optical flow by using the LK algorithm:  "
+"""
+Write a function which takes an image and returns the optical flow by using the LK algorithm:  
+"""
 def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
                 win_size=5) -> (np.ndarray, np.ndarray):
     """
@@ -98,7 +99,7 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
 def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
                      stepSize: int, winSize: int) -> np.ndarray:
     """
-    :param img1: First image
+    param img1: First image
     :param img2: Second image
     :param k: Pyramid depth
     :param stepSize: The image sample size
@@ -170,7 +171,7 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 def bestAngle(img1: np.ndarray, img2: np.ndarray) -> float:
     """
     Find the best angle between two images (0-359) by minimizing the mean squared error.
-    :param img1: First image
+    param img1: First image
     :param img2: Second image
     :return: The best angle
     """
@@ -211,7 +212,7 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 def getRotationMatrix(angle: float) -> np.ndarray:
     """
     Get the rotation transformation matrix for a given angle.
-    :param angle: Rotation angle in degrees
+    param angle: Rotation angle in degrees
     :return: Rotation transformation matrix
     """
     angle_rad = math.radians(angle)
@@ -226,7 +227,7 @@ def getRotationMatrix(angle: float) -> np.ndarray:
 def applyRotation(img: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
     """
     Apply the rotation transformation to an image.
-    :param img: Input image
+    param img: Input image
     :param rotation_mat: Rotation transformation matrix
     :return: Rotated image
     """
@@ -237,7 +238,7 @@ def applyRotation(img: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
 def computeFit(img1: np.ndarray, img2: np.ndarray) -> float:
     """
     Compute the fit between two images using mean squared error.
-    :param img1: First image
+    param img1: First image
     :param img2: Second image
     :return: Mean squared error fit
     """
@@ -248,7 +249,7 @@ def computeFit(img1: np.ndarray, img2: np.ndarray) -> float:
 def combineTransformations(translation_mat: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
     """
     Combine translation and rotation matrices to get the final rigid transformation matrix.
-    :param translation_mat: Translation matrix
+    param translation_mat: Translation matrix
     :param rotation_mat: Rotation matrix
     :return: Rigid transformation matrix
     """
@@ -261,7 +262,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
     Find the translation matrix using the correlation-based method.
     :param im1: First image in grayscale format.
-    :param im2: Second image after translation.
+    param im2: Second image after translation.
     :return: Translation matrix.
     """
     # Compute correlation matrix
@@ -278,8 +279,8 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 def computeCorrelation(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
     Compute the correlation matrix between two images.
-    :param im1: First image.
-    :param im2: Second image.
+    param im1: First image.
+    param im2: Second image.
     :return: Correlation matrix.
     """
     # Perform FFT and correlation
@@ -293,7 +294,7 @@ def findHighestCorrelation(correlation: np.ndarray, im2_shape: tuple) -> tuple:
     """
     Find the coordinates of the highest correlation point in the correlation matrix.
     :param correlation: Correlation matrix.
-    :param im2_shape: Shape of the second image.
+    param im2_shape: Shape of the second image.
     :return: Coordinates of the highest correlation point (x1, y1, x2, y2).
     """
     # Find index of highest correlation value
@@ -329,8 +330,8 @@ def computeTranslationMatrix(p1x: int, p1y: int, p2x: int, p2y: int) -> np.ndarr
 
 def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    :param im1: input image 1 in grayscale format.
-    :param im2: image 1 after Rigid.
+    param im1: input image 1 in grayscale format.
+    param im2: image 1 after Rigid.
     :return: Rigid matrix by correlation.
     """
     min_error = np.float('inf')
@@ -452,7 +453,45 @@ def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     :param lap_pyr: Laplacian Pyramid
     :return: Original image
     """
-    pass
+    kernel = cv2.getGaussianKernel(5, sigma=get_sigma(5))
+    kernel = np.dot(kernel, kernel.T)
+    output_img = lap_pyr[-1]  # Start with the lowest level Laplacian layer
+    # Reconstruct the original image by iterating through the Laplacian pyramid in reverse order
+    for i in range(len(lap_pyr) - 2, -1, -1):
+        output_img = gaussExpand(output_img, kernel)  # Expand the image using Gaussian expansion
+        output_img = cv2.add(output_img, lap_pyr[i])  # Add the corresponding Laplacian layer
+
+    return output_img
+
+
+
+
+def get_sigma(k_size: int):
+    return 0.3 * ((k_size - 1) * 0.5 - 1) + 0.8
+
+def gaussExpand(img: np.ndarray, gs_k: np.ndarray) -> np.ndarray:
+    """
+    Expands a Gaussian pyramid level one step up
+    :param img: Pyramid image at a certain level
+    :param gs_k: The kernel to use in expanding
+    :return: The expanded level
+    """
+    # Calculate the dimensions of the expanded image
+    expanded_shape = (2 * img.shape[0], 2 * img.shape[1]) + img.shape[2:]
+    # Create an empty expanded image with the calculated dimensions
+    expanded_img = np.zeros(expanded_shape, dtype=img.dtype)
+    # Copy the pixels from the original image to the expanded image
+    expanded_img[::2, ::2] = img
+    # Apply Gaussian filter to the expanded image
+    expanded_img = cv2.filter2D(expanded_img, -1, gs_k * 4, borderType=cv2.BORDER_REPLICATE)
+    return expanded_img
+
+
+
+
+
+
+
 
 
 def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
