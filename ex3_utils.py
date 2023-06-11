@@ -328,11 +328,30 @@ def computeTranslationMatrix(p1x: int, p1y: int, p2x: int, p2y: int) -> np.ndarr
 
 def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    param im1: input image 1 in grayscale format.
-    param im2: image 1 after Rigid.
+    :param im1: input image 1 in grayscale format.
+    :param im2: image 1 after Rigid.
     :return: Rigid matrix by correlation.
     """
-    pass
+    min_error = np.float('inf')
+    best_rotation_mat = best_rotated_img = 0
+    # for every angle between 0 and 359 we calculate the correlation.
+    # and we find the best angle by checking the correlation.
+    # and then we find the best rotated image by checking the correlation.
+    for angle in range(360):
+        rotation_mat = np.array([[math.cos(angle), -math.sin(angle), 0],
+                      [math.sin(angle), math.cos(angle), 0],
+                      [0, 0, 1]], dtype=np.float32)
+        after_rotation = cv2.warpPerspective(im1, rotation_mat, im1.shape[::-1])  # rotating the image
+        curr_mse = mean_squared_error(im2, after_rotation)  # calculating the error
+        if curr_mse < min_error:
+            min_error = curr_mse
+            best_rotation_mat = rotation_mat
+            best_rotated_img = after_rotation.copy()
+        if curr_mse == 0:
+            break
+
+    translation = findTranslationCorr(best_rotated_img, im2)  # finding the translation from the rotated
+    return translation @ best_rotation_mat  # combining the translation and the rotation.
 
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
