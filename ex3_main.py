@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+
 from ex3_utils import *
 import time
 import cv2
@@ -43,7 +45,7 @@ def compareLK(img_path):
     """
     ADD TEST
     Compare the two results from both functions.
-    :param img_path: Image input
+    param img_path: Image input
     :return:
     """
     print("Compare LK & Hierarchical LK")

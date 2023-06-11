@@ -107,24 +107,20 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     :return: A 3d array, with a shape of (m, n, 2),
     where the first channel holds U, and the second V.
     """
-    # Create pyramids for both images
+    # creating pyramids for both images
     im1_pyrs = gaussianPyr(img1, k)[::-1]
     im2_pyrs = gaussianPyr(img2, k)[::-1]
-
     points = []
     vectors = []
-
-    # Iterate over image pyramids
+    # iterate over image pyramids
     for i in range(k):
-        # Perform optical flow on the current pyramid level
+        # perform optical flow on the current pyramid level
         curr_points, curr_vectors = opticalFlow(im1_pyrs[i], im2_pyrs[i], step_size=stepSize, win_size=winSize)
-
         # Scale points and vectors by the appropriate factor
         scale_factor = 2 ** i
         curr_points_scaled = [[point[0] * scale_factor, point[1] * scale_factor] for point in curr_points]
         curr_vectors_scaled = [[vector[0] * scale_factor, vector[1] * scale_factor] for vector in curr_vectors]
-
-        # Update points and vectors
+        # update points and vectors
         for j, point in enumerate(curr_points_scaled):
             if point not in points:
                 points.append(point)
@@ -151,12 +147,12 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     # calculate optical flow using the LK algorithm
     points, vectors = opticalFlow(im1.astype(np.float), im2.astype(np.float), step_size=20, win_size=5)
 
-    # Filter out small changes using median
+    # filter out small changes using median
     med_u = np.median(vectors[:, 0])
     med_v = np.median(vectors[:, 1])
     filtered_vectors = vectors[np.logical_and(np.abs(vectors[:, 0]) > med_u, np.abs(vectors[:, 1]) > med_v)]
 
-    # Calculate average movement
+    # calculate average movement
     t_x = np.median(filtered_vectors[:, 0]) * 2
     t_y = np.median(filtered_vectors[:, 1]) * 2
 
@@ -268,7 +264,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     # Compute correlation matrix
     correlation = computeCorrelation(im1, im2)
 
-    # Find highest correlation point
+    # find the highest correlation point
     p1x, p1y, p2x, p2y = findHighestCorrelation(correlation, im2.shape)
 
     # Compute translation matrix
@@ -416,7 +412,6 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :return: Gaussian pyramid (list of images)
     """
     pyrs = [img]  # Create an array to store the pyramid
-
     for _ in range(1, levels):
         img = cv2.pyrDown(img)  # Downsample the image using pyrDown function
         pyrs.append(img)  # Add the downsampled image to the pyramid array
@@ -504,4 +499,22 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray,
     :param levels: Pyramid depth
     :return: (Naive blend, Blended Image)
     """
-    pass
+    # Resize images to match the size of the blend mask
+    img_1 = cv2.resize(img_1, (mask.shape[1], mask.shape[0]))
+    img_2 = cv2.resize(img_2, (mask.shape[1], mask.shape[0]))
+    # create Laplacian pyramid for the images and Gaussian pyramid for the mask
+    lap_pyr_1 = laplaceianReduce(img_1, levels)
+    lap_pyr_2 = laplaceianReduce(img_2, levels)
+    mask_pyr = gaussianPyr(mask, levels)
+    # create an array to store the merged images
+    merged_pyr = []
+    for i in range(levels):
+        # Perform blending operation for each pyramid level
+        merged = lap_pyr_1[i] * mask_pyr[i] + (1 - mask_pyr[i]) * lap_pyr_2[i]
+        merged_pyr.append(merged)
+
+    # restore the original image using the laplacianExpand function
+    blended_img = laplaceianExpand(merged_pyr)
+    # calculate the naive blend
+    naive_blend = img_1 * mask + (1 - mask) * img_2
+    return naive_blend, blended_img
