@@ -430,7 +430,20 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Laplacian Pyramid (list of images)
     """
-    pass
+    lap_pyramid = []
+    gauss_pyramid = [img]
+
+    for _ in range(levels - 1):
+        img = cv2.pyrDown(img)
+        gauss_pyramid.append(img)
+
+    for i in range(levels - 1):
+        expanded_img = cv2.pyrUp(gauss_pyramid[i + 1], dstsize=gauss_pyramid[i].shape[:2])
+        lap_layer = cv2.subtract(gauss_pyramid[i], expanded_img)
+        lap_pyramid.append(lap_layer)
+
+    lap_pyramid.append(gauss_pyramid[levels - 1])
+    return lap_pyramid
 
 
 def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
