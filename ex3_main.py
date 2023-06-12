@@ -122,7 +122,6 @@ def compareLK(img_path):
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     plt.imshow(img, cmap='gray')
     plt.quiver(pts[:, 0], pts[:, 1], uvs[:, 0], uvs[:, 1], color='r')
-
     plt.show()
 
 
@@ -222,7 +221,6 @@ def blendDemo():
 
 def main():
     print("ID:", myID())
-
     img_path = 'input/boxMan.jpg'
     lkDemo(img_path)
     hierarchicalkDemo(img_path)
