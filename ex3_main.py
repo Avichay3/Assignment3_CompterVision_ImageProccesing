@@ -1,5 +1,4 @@
 from matplotlib import pyplot as plt
-
 from ex3_utils import *
 import time
 import cv2
