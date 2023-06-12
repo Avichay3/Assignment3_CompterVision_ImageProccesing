@@ -10,7 +10,7 @@ import cv2
 
 
 def lkDemo(img_path):
-    print("------------------LK Demo-------------------")
+    print("------------------LK Demo--------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
