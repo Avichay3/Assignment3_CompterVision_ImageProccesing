@@ -1,15 +1,12 @@
-import itertools
-import math
-import sys
-from typing import List
 
+import math
+from typing import List
 import numpy as np
+from numpy.linalg import LinAlgError
 import cv2
 import pygame
-from numpy.linalg import LinAlgError
 import matplotlib.pyplot as plt
 import warnings
-
 from sklearn.metrics import mean_squared_error
 
 warnings.filterwarnings('ignore')

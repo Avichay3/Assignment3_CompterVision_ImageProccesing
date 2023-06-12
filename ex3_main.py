@@ -1,5 +1,4 @@
 from matplotlib import pyplot as plt
-import numpy as np
 from ex3_utils import *
 import time
 
@@ -337,7 +336,7 @@ def main():
     #hierarchicalkDemo('input/boxMan.jpg')
     #compareLK('input/boxMan.jpg')
     #translationlkdemo('input/pyr_bit.jpg')
-    #rigidlkdemo('input/cat .jpg')
+    rigidlkdemo('input/cat .jpg')
     #translationcorrdemo('input/cat .jpg')
     #rigidcorrdemo('input/sunset .jpg')
     #imageWarpingDemo('input/sunset .jpg')
