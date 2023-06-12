@@ -1,9 +1,6 @@
 from matplotlib import pyplot as plt
-from numpy import cfloat
-
+import numpy as np
 from ex3_utils import *
-# from ex3T import *
-# from ex3 import *
 import time
 
 
@@ -13,8 +10,7 @@ import time
 
 
 def lkDemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("LK Demo")
+    print("------------------------LK Demo--------------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     t = np.array([[1, 0, -.2],
@@ -33,8 +29,7 @@ def lkDemo(img_path):
 
 
 def hierarchicalkDemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Hierarchical LK Demo")
+    print("-------------------------------Hierarchical LK Demo-----------------------------------")
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     im1 = cv2.resize(im1, (0, 0), fx=0.5, fy=0.5)
@@ -63,9 +58,7 @@ def hierarchicalkDemo(img_path):
 
 
 def compareLK(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Compare LK & Hierarchical LK")
-
+    print("----------------------------Compare LK & Hierarchical LK--------------------------------")
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
     im1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     im1 = cv2.resize(im1, (0, 0), fx=.5, fy=0.5)
@@ -110,10 +103,8 @@ def adjustColor(ax, img, points, points_vectors, pyr_points, pyr_points_vectors,
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     plt.imshow(img, cmap='gray')
     plt.quiver(pts[:, 0], pts[:, 1], uvs[:, 0], uvs[:, 1], color='r')
-
     plt.show()
-    print("---------------------------------------------------------------------------")
-    print("Optical flow demo")
+
 
 
 
@@ -124,40 +115,64 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
 # ---------------------------------------------------------------------------
 
 def translationlkdemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Translation lk demo")
+    print("------------------------Translation LK Demo---------------------------")
+    # loading the original image and resize it
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
-    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
-    orig_mat = np.array([[1, 0, -50],
-                         [0, 1, -50],
-                         [0, 0, 1]], dtype=float)
+    img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
+    img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
+
+    # define the original transformation matrix
+    orig_mat = np.array([[1, 0, -50],[0, 1, -50],[0, 0, 1]], dtype=float)
+
+    # warp the original image using the original matrix
     img_2 = cv2.warpPerspective(img_1, orig_mat, img_1.shape[::-1])
-    cv2.imwrite('imTransA1.jpg', img_2)
-    st = time.time()
+    cv2.imwrite('img1.jpg', img_2)
+
+    # find the translation matrix using LK algorithm
     my_mat = findTranslationLK(img_1, img_2)
-    et = time.time()
-    print("Time: {:.2f}".format(et - st))
-    print("my mat: \n", my_mat, "\n\n original mat: \n", orig_mat)
+
+    # warp the original image using the obtained matrix
     my_warp = cv2.warpPerspective(img_1, my_mat, (img_1.shape[1], img_1.shape[0]))
-    cv2.imwrite('imTransA2.jpg', my_warp)
-    f, ax = plt.subplots(1, 3)
-    ax[0].set_title('CV Translation')
-    ax[0].imshow(img_2, cmap='gray')
+    cv2.imwrite('img2.jpg', my_warp)
 
-    ax[1].set_title('My Translation')
-    ax[1].imshow(my_warp, cmap='gray')
+    # creating the plot with subplots, all in one
+    fig, axs = plt.subplots(2, 3, figsize=(10, 6))
 
-    ax[2].set_title('Difference')
-    ax[2].imshow(img_2 - my_warp, cmap='gray')
+    # display the original image in the first subplot
+    axs[0, 0].set_title('original Image')
+    axs[0, 0].imshow(img_1, cmap='gray')
 
+    # display the warped image using the original matrix in the second subplot
+    axs[0, 1].set_title('warped Image')
+    axs[0, 1].imshow(img_2, cmap='gray')
+
+    # display the difference between the warped image and the LK-warp image in the third subplot
+    axs[0, 2].set_title('difference')
+    axs[0, 2].imshow(img_2 - my_warp, cmap='gray')
+
+    # Display the warped image using the original matrix (CV Translation) in the fourth subplot
+    axs[1, 0].set_title('cv Translation')
+    axs[1, 0].imshow(img_2, cmap='gray')
+
+    # display the warped image (My Translation) in the fifth subplot
+    axs[1, 1].set_title('my Translation')
+    axs[1, 1].imshow(my_warp, cmap='gray')
+
+    # hiding the empty subplot in the last column
+    axs[1, 2].axis('off')
+
+    # adjust the layout and display the plot
+    plt.tight_layout()
     plt.show()
-    print("MSE = ", MSE(my_warp, img_2))
+
+    # calculating the MSE between the LK-warp image and the warped image using of the original matrix
+    mse = MSE(my_warp, img_2)
+    print("MSE =", mse)
+
 
 
 def rigidlkdemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Rigid lk demo")
+    print("----------------------------Rigid lk demo------------------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     angle = 0.8
 
@@ -184,8 +199,7 @@ def rigidlkdemo(img_path):
 
 
 def translationcorrdemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Translation corr demo")
+    print("------------------------------Translation corr demo-----------------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
@@ -216,8 +230,7 @@ def translationcorrdemo(img_path):
 
 
 def rigidcorrdemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Rigid corr demo")
+    print("------------------------------Rigid corr demo--------------------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=.5)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=.5)
@@ -248,8 +261,7 @@ def rigidcorrdemo(img_path):
 
 
 def imageWarpingDemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Image Warping Demo")
+    print("---------------------------Image Warping Demo------------------------------")
 
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=.5, fy=0.5)
@@ -279,8 +291,7 @@ def imageWarpingDemo(img_path):
 
 
 def pyrGaussianDemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Gaussian Pyramid Demo")
+    print("---------------------------------Gaussian Pyramid Demo-----------------------------------")
 
     img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
     lvls = 4
@@ -302,8 +313,7 @@ def pyrGaussianDemo(img_path):
 
 
 def pyrLaplacianDemo(img_path):
-    print("---------------------------------------------------------------------------")
-    print("Laplacian Pyramid Demo")
+    print("-------------------------------Laplacian Pyramid Demo--------------------------------")
 
     img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY) / 255
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
@@ -325,14 +335,11 @@ def pyrLaplacianDemo(img_path):
 
 
 def blendDemo():
-    print("Blending demo")
-    print("---------------------------------------------------------------------------")
+    print("-----------------------------------Blending demo----------------------------------------")
     im1 = cv2.cvtColor(cv2.imread('input/sunset .jpg'), cv2.COLOR_BGR2RGB) / 255
     im2 = cv2.cvtColor(cv2.imread('input/cat .jpg'), cv2.COLOR_BGR2RGB) / 255
     mask = cv2.cvtColor(cv2.imread('input/mask_cat.jpg'), cv2.COLOR_BGR2RGB) / 255
-
     n_blend, im_blend = pyrBlend(im1, im2, mask, 4)
-
     f, ax = plt.subplots(2, 3)
     ax[0, 0].imshow(im1)
     ax[0, 1].imshow(im2)
@@ -340,13 +347,10 @@ def blendDemo():
     ax[1, 0].imshow(n_blend)
     ax[1, 1].imshow(np.abs(n_blend - im_blend))
     ax[1, 2].imshow(im_blend)
-
     plt.show()
 
-    # cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
-
-def MSE(a: np.ndarray, b: np.ndarray) -> float:
+def MSE(a: np.ndarray, b: np.ndarray):
     return np.square(a - b).mean()
 
 
@@ -355,14 +359,14 @@ def main():
     #lkDemo('input/boxMan.jpg')    work
     #hierarchicalkDemo('input/boxMan.jpg')     work
     #compareLK('input/boxMan.jpg')   fine
-    #translationlkdemo('input/pyr_bit.jpg')   work
+    translationlkdemo('input/pyr_bit.jpg')
     #rigidlkdemo('input/cat .jpg')    work
     #translationcorrdemo('input/cat .jpg')  work
     #rigidcorrdemo('input/cat .jpg')   work
     #imageWarpingDemo('input/sunset .jpg')   work
     #pyrGaussianDemo('input/pyr_bit.jpg')   work
     #pyrLaplacianDemo('input/pyr_bit.jpg')
-    blendDemo()
+    #blendDemo()
 
 
 if __name__ == '__main__':
