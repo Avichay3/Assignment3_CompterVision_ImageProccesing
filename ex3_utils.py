@@ -194,7 +194,7 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     Find the rigid transformation matrix using the Lucas-Kanade algorithm.
     :param im1: First image in grayscale format
     :param im2: Second image after rigid transformation
-    :return: Rigid transformation matrix
+    :return: rigid transformation matrix
     """
     best_angle = bestAngle(im1, im2)
     rotation_mat = getRotationMatrix(best_angle)
