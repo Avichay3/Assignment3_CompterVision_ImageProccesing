@@ -408,36 +408,41 @@ def laplacianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     :param lap_pyr: Laplacian Pyramid
     :return: Original image
     """
-    kernel_size = 5
-    sigma = get_sigma(kernel_size)
-    kernel = cv2.getGaussianKernel(kernel_size, sigma) @ cv2.getGaussianKernel(kernel_size, sigma).T
-    output_img = lap_pyr[-1]
+    kernel_size = 5  # set the kernel size for the Gaussian kernel
+    sigma = get_sigma(kernel_size)  # calculate the sigma value based on the kernel size
+    kernel = cv2.getGaussianKernel(kernel_size, sigma) @ cv2.getGaussianKernel(kernel_size, sigma).T  # create the Gaussian kernel
+    output_img = lap_pyr[-1]  # initialize the output image with the top level of the Laplacian pyramid
     for i in range(len(lap_pyr) - 1, 0, -1):
-        expanded_img = gaussExpand(output_img, kernel)
+        expanded_img = gaussExpand(output_img, kernel)  # expand the output image using Gaussian pyramid expansion
         try:
-            output_img = cv2.add(expanded_img, lap_pyr[i - 1])
+            output_img = cv2.add(expanded_img, lap_pyr[i - 1])  # Add the expanded image and the Laplacian layer
         except Exception:
-            expanded_img = expanded_img[:lap_pyr[i - 1].shape[0], :lap_pyr[i - 1].shape[1]]
-            output_img = cv2.add(expanded_img, lap_pyr[i - 1])
+            # Handle the case where the sizes of the expanded image and Laplacian layer do not match
+            expanded_img = expanded_img[:lap_pyr[i - 1].shape[0], :lap_pyr[i - 1].shape[1]]  # resize the expanded image
+            output_img = cv2.add(expanded_img, lap_pyr[i - 1])  # add the resized expanded image and the Laplacian layer
 
     return output_img
 
 
+
 def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     """
-    Creates a Gaussian Pyramid
-    :param img: Original image
-    :param levels: Pyramid depth
-    :return: Gaussian pyramid (list of images)
+    Creates a Gaussian Pyramid.
+    :param img: Original image.
+    :param levels: Pyramid depth.
+    :return: Gaussian pyramid (list of images).
     """
-    gauss_pyramid = [img]
-
+    gauss_pyramid = [img]  # initialize the Gaussian pyramid with the original image
     for _ in range(1, levels):
+        # apply Gaussian blur to the previous level of the pyramid
         curr_img = cv2.GaussianBlur(gauss_pyramid[-1], (5, 5), 0)
+        #  reducing the size of the blurred image by taking every second pixel in both dimensions
         curr_img = curr_img[::2, ::2]
+        # adding the size of the blurred image to the Gaussian pyramid
         gauss_pyramid.append(curr_img)
 
     return gauss_pyramid
+
 
 
 def gaussExpand(img: np.ndarray, gs_k: np.ndarray) -> np.ndarray:
@@ -468,16 +473,18 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray, mask: np.ndarray, levels: int
     :param levels: Pyramid depth
     :return: (Naive blend, Blended Image)
     """
-    firstLaplacianPyr = laplaceianReduce(img_1, levels=levels)
-    secondLaplacianPyr = laplaceianReduce(img_2, levels=levels)
-    gaussPyrMask = gaussianPyr(mask, levels=levels)
-    # after we got the pyramids for @img_1 and for @img_2 and for the mask we can blend
-    # each level of those pyramids and create a new blended pyramid.
-    blended_pyr = [gaussPyrMask[i] * firstLaplacianPyr[i] + (1 - gaussPyrMask[i]) * secondLaplacianPyr[i] for i in
-                   range(len(gaussPyrMask))]
+    # compute Laplacian pyramids for the input images
+    first_lap_pyr = laplaceianReduce(img_1, levels=levels)
+    second_lap_pyr = laplaceianReduce(img_2, levels=levels)
+    # compute Gaussian pyramid for the blend mask
+    gauss_pyr_mask = gaussianPyr(mask, levels=levels)
+    # blend each level of the pyramids using the blend mask
+    blended_pyr = [gauss_pyr_mask[i] * first_lap_pyr[i] + (1 - gauss_pyr_mask[i]) * second_lap_pyr[i] for i in
+                   range(len(gauss_pyr_mask))]
 
-    # now we can expand and build our desired image from the pyramid.
+    # reconstruct the blended image from the blended pyramid
     blended_img = laplacianExpand(blended_pyr)
+    # finally create a naive blend by replacing pixels in image 1 with image 2 where the mask is zero
     naive_img = img_1.copy()
     naive_img[mask == 0] = img_2[mask == 0]
 

@@ -314,7 +314,7 @@ def pyrLaplacianDemo(img_path):
     lvls = 7
 
     lap_pyr = laplaceianReduce(img, lvls)
-    re_lap = laplaceianExpand(lap_pyr)
+    re_lap = laplacianExpand(lap_pyr)
 
     f, ax = plt.subplots(2, lvls + 1)
     plt.gray()
@@ -353,14 +353,14 @@ def main():
     #lkDemo('input/boxMan.jpg')    work
     #hierarchicalkDemo('input/boxMan.jpg')     work
     #compareLK('input/boxMan.jpg')   fine
-    translationlkdemo('input/pyr_bit.jpg')
+    #translationlkdemo('input/pyr_bit.jpg')
     #rigidlkdemo('input/cat .jpg')    work
-    #translationcorrdemo('input/cat .jpg')  work
-    #rigidcorrdemo('input/cat .jpg')   work
+    #translationcorrdemo('input/cat .jpg')
+    #rigidcorrdemo('input/sunset .jpg')
     #imageWarpingDemo('input/sunset .jpg')   work
     #pyrGaussianDemo('input/pyr_bit.jpg')   work
     #pyrLaplacianDemo('input/pyr_bit.jpg')
-    #blendDemo()
+    blendDemo()
 
 
 if __name__ == '__main__':
