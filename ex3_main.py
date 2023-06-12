@@ -356,7 +356,7 @@ def main():
     #hierarchicalkDemo('input/boxMan.jpg')     work
     #compareLK('input/boxMan.jpg')         not finish
     #translationlkdemo('input/pyr_bit.jpg')   work
-    #rigidlkdemo('input/myPic1.jpg')
+    #rigidlkdemo('input/cat .jpg')    work
     #translationcorrdemo('input/myPic1.jpg')
     #rigidcorrdemo('input/shapes.jpeg')
     #imageWarpingDemo('input/sunset.jpg')
