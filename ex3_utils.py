@@ -32,7 +32,7 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10, win_size=5) -> (
     :param im1: Image 1
     :param im2: Image 2
     :param step_size: The image sample size
-    :param win_size: The optical flow window size (odd number)
+    :param win_size: The optical flow window size
     """
     def preprocess_image(image):
         # convert image to grayscale if it has more than 2 dimensions
@@ -103,7 +103,7 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     where the first channel holds U, and the second V.
     """
 
-    # if the image is RGB, convert to gray
+    # if the image is RGB (3 dimensions), convert to gray
     if len(img1.shape) > 2:
         img1 = cv2.cvtColor(img1, cv2.COLOR_RGB2GRAY)
     if len(img2.shape) > 2:
@@ -112,7 +112,7 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
     if img1.shape != img2.shape:
         raise Exception("The images must be in the same size")
 
-    # First, find the pyramids for @img1 and @img2.
+    # first, find the pyramids for img1 and also img2.
     firstImgPyramid = gaussianPyr(img1, k)
     firstImgPyramid.reverse()
     secondImgPyramid = gaussianPyr(img2, k)
@@ -146,16 +146,18 @@ def opticalFlowPyrLK(img1: np.ndarray, img2: np.ndarray, k: int,
         ans[px][py][1] = vec_per_point[ind][1]
     return ans
 
-def OF(im1: np.ndarray, im2: np.ndarray, blockSize=11,
-       maxCorners=5000, qualityLevel=0.00001, minDistance=1) -> (np.ndarray, np.ndarray):
-    # this function find the OF by using openCV LK
+
+def optFlow(im1: np.ndarray, im2: np.ndarray, blockSize=11, maxCorners=5000, qualityLevel=0.00001, minDistance=1):
+    # convert images to uint8 if necessary
     im1 = im1.astype('uint8')
     im2 = im2.astype('uint8')
+    # set the parameters for corner detection
     features = dict(maxCorners=maxCorners, qualityLevel=qualityLevel, minDistance=minDistance, blockSize=blockSize)
-    best_points = cv2.goodFeaturesToTrack(im1, mask=None, **features)
+    # detecting the best corners in the first image
+    best_points = cv2.goodFeaturesToTrack(im1, mask=None, **features)  # find strong corners or features in image
+    # optical flow estimation using the Lucas-Kanade algorithm with pyramids
     movements = cv2.calcOpticalFlowPyrLK(im1, im2, best_points, None)[0]
     return movements, best_points
-
 
 
 # ---------------------------------------------------------------------------
@@ -163,88 +165,85 @@ def OF(im1: np.ndarray, im2: np.ndarray, blockSize=11,
 # ---------------------------------------------------------------------------
 
 
-def find_vec_of_transformMed(mat: np.ndarray):
+def calculate_median_optical_flow(mat: np.ndarray):
     """
-    This method calculates the median of the (u,v) vector from @mat.
-    :param mat: array of the vectors of the OP
-    :return: the median vector - (u,v)
+    This function calculates the median optical flow vector from the input matrix.
+    :param mat: Array of optical flow vectors (shape: (n, 1, 2))
     """
-    U = []
-    V = []
-    for ind in range(len(mat)):
-        U.append(mat[ind, 0, 0])
-        V.append(mat[ind, 0, 1])
-    med1 = np.median(U)
-    med2 = np.median(V)
-    return med1, med2
+    num_vectors = mat.shape[0]
+    u_values = mat[:, 0, 0]
+    v_values = mat[:, 0, 1]
+    median_u = np.median(u_values)
+    median_v = np.median(v_values)
+    return median_u, median_v
 
 
-def find_vec_of_transform(img1: np.ndarray, img2: np.ndarray, mat: np.ndarray):
+def find_best_translation_vector(img1: np.ndarray, img2: np.ndarray, mat: np.ndarray):
     """
-    This function returns best vector that suits the translation between @img1 to @img2.
-    :param img1: first image
-    :param img2: second image
-    :param mat: array of the vectors of the OP
-    :return: vector - [u,v]
+    This function returns the best translation vector that aligns img1 to img2.
+    :param img1: First image
+    :param img2: Second image
+    :param mat: Array of optical flow vectors (shape: (n, 1, 2))
     """
     best_fit = float("inf")
-    best_vec = 0
+    best_vec = [0, 0]
     for ind in range(len(mat)):
         tx = mat[ind, 0, 0]
         ty = mat[ind, 0, 0]
-        t = np.array([[1, 0, tx],
-                      [0, 1, ty],
-                      [0, 0, 1]], dtype=float)
-        curr_im2 = cv2.warpPerspective(img1, t, img1.shape[::-1])
-        curr_fit = ((img2 - curr_im2) ** 2).sum()
+
+        translation_matrix = np.array([[1, 0, tx], [0, 1, ty],[0, 0, 1]], dtype=float)
+        curr_img2 = cv2.warpPerspective(img1, translation_matrix, img1.shape[::-1])
+        curr_fit = ((img2 - curr_img2) ** 2).sum()
+
         if curr_fit < best_fit:
             best_fit = curr_fit
             best_vec = [tx, ty]
+
         if curr_fit == 0:
             break
 
     return best_vec
 
 
-def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
+
+def calculate_translation_matrix(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    :param im1: image 1 in grayscale format.
-    :param im2: image 1 after Translation.
-    :return: Translation matrix by LK.
+    Calculates the translation matrix based on the optical flow between im1 and im2.
+    :param im1: First image (grayscale)
+    :param im2: Second image (grayscale)
+    :return: Translation matrix
     """
-
-    movements, best_points = OF(im1, im2)
-    # find the vector by checking all the @vec vectors.
-    tx, ty = find_vec_of_transform(im1, im2, movements - best_points)
-
-    # find the vector by calculating the median vector from @vec (different approach)
-    # tx, ty = find_vec_of_transformMed(movements - best_points)
-
+    movements, best_points = optFlow(im1, im2)
+    translation_vector = movements - best_points
+    tx, ty = find_best_translation_vector(im1, im2, translation_vector)
     return np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
 
 
-def bestAngle(img1: np.ndarray, img2: np.ndarray) -> float:
+
+def find_best_rotation_angle(img1: np.ndarray, img2: np.ndarray) -> float:
     """
-    This function go over all the possibilities for an angle between two images (0-359).
-    :param img1: first image
-    :param img2: second image
-    :return: the best angle
+    Finds the best rotation angle between two images by evaluating all possible angles (0-359).
+    :param img1: First image
+    :param img2: Second image
+    :return: Best rotation angle
     """
     best_angle = 0
     best_fit = float("inf")
-    for angle in range(360):  # for every possible angle
-        cos_value = math.cos(math.radians(angle))
-        sin_value = math.cos(math.radians(angle))
-
-        # The rotation transformation matrix.
+    for angle in range(360):  # Iterate over all possible angles
+        theta = math.radians(angle)
+        cos_value = math.cos(theta)
+        sin_value = math.sin(theta)
+        # create the rotation transformation matrix
         rotation_mat = np.array([[cos_value, -sin_value, 0], [sin_value, cos_value, 0], [0, 0, 1]], dtype=np.float32)
+        # apply rotation to img1
+        rotated_img = cv2.warpPerspective(img1, rotation_mat, img1.shape[::-1])
+        # calculate the mean squared error (MSE) between rotated_img and img2
+        curr_fit = mean_squared_error(img2, rotated_img)
 
-        curr_img2 = cv2.warpPerspective(img1, rotation_mat, img1.shape[::-1])
-        curr_fit = mean_squared_error(img2, curr_img2)
-
-        if curr_fit < best_fit:  # goal min MSE -> == 0.
+        if curr_fit < best_fit:
             best_fit = curr_fit
             best_angle = angle
+
         if best_fit == 0:
             break
 
@@ -253,53 +252,40 @@ def bestAngle(img1: np.ndarray, img2: np.ndarray) -> float:
 
 def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    :param im1: input image 1 in grayscale format.
-    :param im2: image 1 after Rigid.
-    :return: Rigid matrix by LK.
+    Finds the rigid transformation matrix using the Lucas-Kanade algorithm.
+    :param im1: Input image 1 in grayscale format.
+    :param im2: Image 1 after applying rigid transformation.
+    :return: Rigid transformation matrix.
     """
-    best_angle = bestAngle(im1, im2)
-    # after discovered the @best_angle we can create the rotation matrix.
-    cos_value = math.cos(math.radians(best_angle))
-    sin_value = math.sin(math.radians(best_angle))
+    best_angle = find_best_rotation_angle(im1, im2)
+    theta = math.radians(best_angle)  # create the rotation matrix based on the best angle
+    cos_value = math.cos(theta)
+    sin_value = math.sin(theta)
     rotation_mat = np.array([[cos_value, -sin_value, 0], [sin_value, cos_value, 0], [0, 0, 1]], dtype=np.float32)
-
-    # now we need to find out the (u,v) that will complete the transformation from rotation to rigid.
-    # rigid = rotation X translation
-    after_rotate_im2 = cv2.warpPerspective(im1, rotation_mat, im1.shape[::-1])
-    translation_mat = findTranslationLK(after_rotate_im2, im2)
-
-    return translation_mat @ rotation_mat
-
-
-def findCorrelation(img1: np.ndarray, img2: np.ndarray):
-    """
-    This function looks for two points, one from @img1 and second from @img2.
-    The two points are the ones with the highest correlation.
-    :param img1: first image
-    :param img2: second image
-    :return: 2 points - x1, y1, x2, y2
-    """
-    # img1[img1 == 0] = np.float("inf")
-    # img2[img2 == 0] = np.float("inf")
-    img_shape = np.max(img1.shape) // 2
-    im1FFT = np.fft.fft2(np.pad(img1, img_shape))
-    im2FFT = np.fft.fft2(np.pad(img2, img_shape))
-    prod = im1FFT * im2FFT.conj()
-    res = np.fft.fftshift(np.fft.ifft2(prod))
-    correlation = res.real[1 + img_shape:-img_shape + 1, 1 + img_shape:-img_shape + 1]
-    p1y, p1x = np.unravel_index(np.argmax(correlation), correlation.shape)
-    p2y, p2x = np.array(img2.shape) // 2
-    return p1x, p1y, p2x, p2y
+    rotated_im1 = cv2.warpPerspective(im1, rotation_mat, im1.shape[::-1])  # applying rotation to im1
+    translation_mat = calculate_translation_matrix(rotated_im1, im2)  # calculating the translation matrix to complete the rigid transformation
+    rigid_mat = translation_mat @ rotation_mat  # combine the rotation and translation matrices
+    return rigid_mat
 
 
 def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    :param im1: input image 1 in grayscale format.
-    :param im2: image 1 after Translation.
+    Finds the translation matrix using correlation-based matching.
+    :param im1: Input image 1 in grayscale format.
+    :param im2: Image 1 after translation.
     :return: Translation matrix by correlation.
     """
-    X1, Y1, X2, Y2 = findCorrelation(im1, im2)
-    return np.array([[1, 0, (X2 - X1 - 1)], [0, 1, (Y2 - Y1 - 1)], [0, 0, 1]], dtype=float)
+    img_shape = np.max(im1.shape) // 2
+    im1FFT = np.fft.fft2(np.pad(im1, img_shape))
+    im2FFT = np.fft.fft2(np.pad(im2, img_shape))
+    prod = im1FFT * im2FFT.conj()
+    res = np.fft.fftshift(np.fft.ifft2(prod))
+    correlation = res.real[1 + img_shape:-img_shape + 1, 1 + img_shape:-img_shape + 1]
+    p1y, p1x = np.unravel_index(np.argmax(correlation), correlation.shape)
+    p2y, p2x = np.array(im2.shape) // 2
+    translation_mat = np.array([[1, 0, (p2x - p1x - 1)], [0, 1, (p2y - p1y - 1)], [0, 0, 1]], dtype=float)
+    return translation_mat
+
 
 
 def getAngle(point1, point2):
@@ -345,29 +331,28 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
 def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     """
-    :param im1: input image 1 in grayscale format.
-    :param im2: input image 2 in grayscale format.
-    :param T: is a 3x3 matrix such that each pixel in image 2
-    is mapped under homogenous coordinates to image 1 (p2=Tp1).
-    :return: warp image 2 according to T and display both image1
-    and the wrapped version of the image2 in the same figure.
+    Warps image2 (im2) onto image1 (im1) using the transformation matrix T.
+    :param im1: Input image 1 in grayscale format.
+    :param im2: Input image 2 in grayscale format.
+    :param T: 3x3 transformation matrix where each pixel in im2 is mapped under homogenous coordinates to im1 (p2 = Tp1)
+    :return: warp image 2 according to T and display both image1 and the wrapped version of the image2 in the same figure.
     """
-    if len(im1.shape) > 2:
+    if len(im1.shape) > 2:  # 3 or more dimensions
         im1 = cv2.cvtColor(im1, cv2.COLOR_BGR2GRAY)
     if len(im2.shape) > 2:
         im2 = cv2.cvtColor(im2, cv2.COLOR_BGR2GRAY)
 
-    warped_img = np.zeros(im2.shape)
-    for row in range(1, im2.shape[0]):
-        for col in range(1, im2.shape[1]):
-            # we need to find the coordinates of the point in image 1
-            # by using the inverse transformation.
-            current_vec = np.array([row, col, 1]) @ np.linalg.inv(T)  # calculating the vector
+    warped_img = np.zeros(im2.shape, dtype=im2.dtype)  # create an empty array for the warped image with the same shape as im2
+    inv_T = np.linalg.inv(T)   # calculate the inverse of the transformation matrix T
+    # iterate over each pixel in im2
+    for row in range(im2.shape[0]):
+        for col in range(im2.shape[1]):
+            # calculate the coordinates of the point in im1 using inverse transformation
+            current_vec = np.array([row, col, 1]) @ inv_T
             dx, dy = int(round(current_vec[0])), int(round(current_vec[1]))
-            # if the point has a valid coordinates in image 1
-            # we put the pixel in the warped image.
+            # check if the point has valid coordinates in im1
             if 0 <= dx < im1.shape[0] and 0 <= dy < im1.shape[1]:
-                warped_img[row, col] = im1[dx, dy]  # putting the pixel in the warped image.
+                warped_img[row, col] = im1[dx, dy]  # Put the pixel in the warped image
 
     return warped_img
 
@@ -377,7 +362,12 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 
+
+
 def get_sigma(k_size: int):
+    """
+    This function calculate the sigma value for a given kernel size in the context of Gaussian filtering
+    """
     return 0.3 * ((k_size - 1) * 0.5 - 1) + 0.8
 
 
@@ -412,27 +402,23 @@ def laplaceianReduce(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     return lap_pyramid
 
 
-def laplaceianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
+def laplacianExpand(lap_pyr: List[np.ndarray]) -> np.ndarray:
     """
-    Resorts the original image from a laplacian pyramid
+    Reshapes the original image from a Laplacian pyramid.
     :param lap_pyr: Laplacian Pyramid
     :return: Original image
     """
-    kernel = cv2.getGaussianKernel(5, sigma=get_sigma(5))
-    kernel = np.dot(kernel, kernel.T)
+    kernel_size = 5
+    sigma = get_sigma(kernel_size)
+    kernel = cv2.getGaussianKernel(kernel_size, sigma) @ cv2.getGaussianKernel(kernel_size, sigma).T
     output_img = lap_pyr[-1]
     for i in range(len(lap_pyr) - 1, 0, -1):
-        # expand to next level
-        expandedImg = gaussExpand(output_img, kernel)
-
-        try:  # if we can add the two images without changing their size
-            output_img = cv2.add(expandedImg, lap_pyr[i - 1])
+        expanded_img = gaussExpand(output_img, kernel)
+        try:
+            output_img = cv2.add(expanded_img, lap_pyr[i - 1])
         except Exception:
-            if len(expandedImg) != len(lap_pyr[i - 1]):
-                expandedImg = expandedImg[0:len(lap_pyr[i - 1]), :]
-            if len(expandedImg[0]) != len(lap_pyr[i - 1][0]):
-                expandedImg = expandedImg[:, 0:len(lap_pyr[i - 1][0])]
-            output_img = cv2.add(expandedImg, lap_pyr[i - 1])
+            expanded_img = expanded_img[:lap_pyr[i - 1].shape[0], :lap_pyr[i - 1].shape[1]]
+            output_img = cv2.add(expanded_img, lap_pyr[i - 1])
 
     return output_img
 
@@ -491,7 +477,7 @@ def pyrBlend(img_1: np.ndarray, img_2: np.ndarray, mask: np.ndarray, levels: int
                    range(len(gaussPyrMask))]
 
     # now we can expand and build our desired image from the pyramid.
-    blended_img = laplaceianExpand(blended_pyr)
+    blended_img = laplacianExpand(blended_pyr)
     naive_img = img_1.copy()
     naive_img[mask == 0] = img_2[mask == 0]
 

@@ -120,24 +120,18 @@ def translationlkdemo(img_path):
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
     img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
     img_1 = cv2.resize(img_1, (0, 0), fx=0.5, fy=0.5)
-
     # define the original transformation matrix
     orig_mat = np.array([[1, 0, -50],[0, 1, -50],[0, 0, 1]], dtype=float)
-
     # warp the original image using the original matrix
     img_2 = cv2.warpPerspective(img_1, orig_mat, img_1.shape[::-1])
     cv2.imwrite('img1.jpg', img_2)
-
     # find the translation matrix using LK algorithm
-    my_mat = findTranslationLK(img_1, img_2)
-
+    my_mat = findTranslationCorr(img_1, img_2)
     # warp the original image using the obtained matrix
     my_warp = cv2.warpPerspective(img_1, my_mat, (img_1.shape[1], img_1.shape[0]))
     cv2.imwrite('img2.jpg', my_warp)
-
     # creating the plot with subplots, all in one
     fig, axs = plt.subplots(2, 3, figsize=(10, 6))
-
     # display the original image in the first subplot
     axs[0, 0].set_title('original Image')
     axs[0, 0].imshow(img_1, cmap='gray')
