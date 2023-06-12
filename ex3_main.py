@@ -149,8 +149,7 @@ def imageWarpingDemo(img_path):
 
 
 def pyrGaussianDemo(img_path):
-    print("Gaussian Pyramid Demo")
-
+    print("------------------------Gaussian Pyramid Demo-------------------------")
     img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
     lvls = 4
     gau_pyr = gaussianPyr(img, lvls)
