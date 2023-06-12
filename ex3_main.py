@@ -51,7 +51,6 @@ def hierarchicalkDemo(img_path):
     ADD TEST
     :param img_path: Image input
     :return:
-\
     """
     print("---------------------Hierarchical LK Demo-----------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
@@ -173,7 +172,6 @@ def pyrLaplacianDemo(img_path):
     img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY) / 255
     # img = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB) / 255
     lvls = 7
-
     lap_pyr = laplaceianReduce(img, lvls)
     re_lap = laplaceianExpand(lap_pyr)
 

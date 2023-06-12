@@ -166,19 +166,17 @@ def findTranslationLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
 def bestAngle(img1: np.ndarray, img2: np.ndarray) -> float:
     """
-    Find the best angle between two images (0-359) by minimizing the mean squared error.
+    In this function we find the best angle between two images (0-359) by minimizing the mean squared error
     param img1: First image
     :param img2: Second image
     :return: The best angle
     """
     best_angle = 0
     best_fit = float("inf")
-
     for angle in range(360):
         rotation_mat = getRotationMatrix(angle)
         rotated_img = applyRotation(img1, rotation_mat)
         fit = computeFit(img2, rotated_img)
-
         if fit < best_fit:
             best_fit = fit
             best_angle = angle
@@ -193,8 +191,8 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
     Find the rigid transformation matrix using the Lucas-Kanade algorithm.
     :param im1: First image in grayscale format
-    :param im2: Second image after rigid transformation
-    :return: rigid transformation matrix
+    :param im2: Second image after Rigid transformation
+    :return: Rigid transformation matrix
     """
     best_angle = bestAngle(im1, im2)
     rotation_mat = getRotationMatrix(best_angle)
@@ -206,7 +204,7 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
 def getRotationMatrix(angle: float) -> np.ndarray:
     """
-    Get the rotation transformation matrix for a given angle.
+    In this function we get the rotation transformation matrix for a given angle
     param angle: Rotation angle in degrees
     :return: Rotation transformation matrix
     """
@@ -219,9 +217,9 @@ def getRotationMatrix(angle: float) -> np.ndarray:
 
 def applyRotation(img: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
     """
-    Apply the rotation transformation to an image.
-    param img: Input image
-    :param rotation_mat: Rotation transformation matrix
+    In this function we apply the rotation transformation to an image.
+    param img: The input image
+    :param rotation_mat: rotation transformation matrix
     """
     rotated_img = cv2.warpPerspective(img, rotation_mat, img.shape[::-1])
     return rotated_img
@@ -229,7 +227,7 @@ def applyRotation(img: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
 
 def computeFit(img1: np.ndarray, img2: np.ndarray) -> float:
     """
-    Compute the fit between two images using mean squared error.
+    In this function we compute the fit between two images using the mean squared error
     param img2: Second image , img1: First image
     :return: Mean squared error
     """
@@ -239,7 +237,7 @@ def computeFit(img1: np.ndarray, img2: np.ndarray) -> float:
 
 def combineTransformations(translation_mat: np.ndarray, rotation_mat: np.ndarray) -> np.ndarray:
     """
-    Combine translation and rotation matrices to get the final rigid transformation matrix.
+    In this function we combine translation and rotation matrices to get the final rigid transformation matrix.
     param translation_mat: Translation matrix
     :param rotation_mat: Rotation matrix
     :return: Rigid transformation matrix
@@ -251,21 +249,20 @@ def combineTransformations(translation_mat: np.ndarray, rotation_mat: np.ndarray
 
 def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    Find the translation matrix using the correlation-based method.
+    In this function we find the translation matrix using the correlation-based method
     :param im1: First image in grayscale format.
     param im2: Second image after translation.
-    :return: Translation matrix.
+    :return: translation matrix.
     """
     # Compute correlation matrix
     correlation = computeCorrelation(im1, im2)
-
     # find the highest correlation point
     p1x, p1y, p2x, p2y = findHighestCorrelation(correlation, im2.shape)
-
     # Compute translation matrix
     translation_mat = computeTranslationMatrix(p1x, p1y, p2x, p2y)
-
     return translation_mat
+
+
 
 def computeCorrelation(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
@@ -278,8 +275,8 @@ def computeCorrelation(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     fft_im1 = np.fft.fft2(im1)
     fft_im2 = np.fft.fft2(im2)
     correlation = np.fft.fftshift(np.fft.ifft2(fft_im1 * np.conj(fft_im2))).real
-
     return correlation
+
 
 def findHighestCorrelation(correlation: np.ndarray, im2_shape: tuple) -> tuple:
     """
@@ -290,12 +287,11 @@ def findHighestCorrelation(correlation: np.ndarray, im2_shape: tuple) -> tuple:
     """
     # Find the highest correlation value
     max_index = np.unravel_index(np.argmax(correlation), correlation.shape)
-
     # Get coordinates of the highest correlation point
     p1y, p1x = max_index
     p2y, p2x = np.array(im2_shape) // 2
-
     return p1x, p1y, p2x, p2y
+
 
 def computeTranslationMatrix(p1x: int, p1y: int, p2x: int, p2y: int) -> np.ndarray:
     """
@@ -309,10 +305,8 @@ def computeTranslationMatrix(p1x: int, p1y: int, p2x: int, p2y: int) -> np.ndarr
     # Calculate translation values
     t_x = p2x - p1x - 1
     t_y = p2y - p1y - 1
-
     # Construct translation matrix
     translation_mat = np.array([[1, 0, t_x], [0, 1, t_y], [0, 0, 1]], dtype=np.float)
-
     return translation_mat
 
 
