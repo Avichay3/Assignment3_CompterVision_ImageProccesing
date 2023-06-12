@@ -193,6 +193,7 @@ def findRigidLK(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im1: First image in grayscale format
     :param im2: Second image after Rigid transformation
     :return: Rigid transformation matrix
+    note that I've seperated the functions to implement this function for better clearity
     """
     best_angle = bestAngle(im1, im2)
     rotation_mat = getRotationMatrix(best_angle)
@@ -266,7 +267,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
 def computeCorrelation(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     """
-    Compute the correlation matrix between two images.
+    In this function we compute the correlation matrix between two images.
     param im1: First image.
     param im2: Second image.
     :return: Correlation matrix.
@@ -280,7 +281,7 @@ def computeCorrelation(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
 
 def findHighestCorrelation(correlation: np.ndarray, im2_shape: tuple) -> tuple:
     """
-    Find the coordinates of the highest correlation point in the correlation matrix.
+    In this function we find the coordinates of the highest correlation point in the correlation matrix.
     :param correlation: Correlation matrix.
     param im2_shape: Shape of the second image.
     :return: Coordinates of the highest correlation point (x1, y1, x2, y2).
@@ -295,14 +296,14 @@ def findHighestCorrelation(correlation: np.ndarray, im2_shape: tuple) -> tuple:
 
 def computeTranslationMatrix(p1x: int, p1y: int, p2x: int, p2y: int) -> np.ndarray:
     """
-    Compute the translation matrix based on the correlation points.
+    In this function we compute the translation matrix based on the correlation points
     :param p1x: x-coordinate of the first correlation point.
     :param p1y: y-coordinate of the first correlation point.
     :param p2x: x-coordinate of the second correlation point.
     :param p2y: y-coordinate of the second correlation point.
     :return: Translation matrix.
     """
-    # Calculate translation values
+    # calculate translation values
     t_x = p2x - p1x - 1
     t_y = p2y - p1y - 1
     # Construct translation matrix
