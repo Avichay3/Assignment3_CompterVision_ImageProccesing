@@ -138,9 +138,20 @@ def imageWarpingDemo(img_path):
     :param img_path: Image input
     :return:
     """
-    print("Image Warping Demo")
+    print("---------------------Image Warping Demo---------------------")
+    image1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
+    t = np.array([[1, 0, 120],
+                  [0, 1, -30],
+                  [0, 0, 1]], dtype=float)
 
-    pass
+    image2 = cv2.warpPerspective(image1, t, image1.shape[::-1])
+
+    plt.imshow(image1, cmap='gray')
+    plt.imshow(image2, cmap='gray')
+
+    img = warpImages(image1, image2, t)
+    plt.imshow(img, cmap='gray')
+    plt.show()
 
 
 # ---------------------------------------------------------------------------
