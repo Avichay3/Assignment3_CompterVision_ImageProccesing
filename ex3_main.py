@@ -3,6 +3,7 @@ from ex3_utils import *
 import time
 import cv2
 
+
 # ---------------------------------------------------------------------------
 # ------------------------ Lucas Kanade optical flow ------------------------
 # ---------------------------------------------------------------------------
@@ -21,19 +22,10 @@ def lkDemo(img_path):
     et = time.time()
 
     print("Time: {:.4f}".format(et - st))
-    print(np.median(uv,0))
-    print(np.mean(uv,0))
+    print(np.median(uv, 0))
+    print(np.mean(uv, 0))
 
     displayOpticalFlow(img_2, pts, uv)
-
-
-
-
-
-
-
-
-
 
 
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
@@ -43,6 +35,7 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     ax.set_title('Optical Flow')
     plt.savefig("output/lucas-kanade")
     plt.show()
+
 
 def displayOpticalFlowh(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     fig, ax = plt.subplots()
@@ -76,7 +69,6 @@ def hierarchicalkDemo(img_path):
     uv, pts = opticalFlowPyrLK(img_1.astype(np.float32), img_2.astype(np.float32), 4, stepSize=20, winSize=5)
     displayOpticalFlow(img_1, pts, uv)
     displayOpticalFlowh(img_1, pts, uv)
-
 
 
 def compareLK(img_path):
@@ -115,7 +107,6 @@ def compareLK(img_path):
 
     plt.tight_layout()
     plt.show()
-
 
 
 def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):

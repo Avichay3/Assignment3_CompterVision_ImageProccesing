@@ -81,7 +81,7 @@ def opticalFlow(im1: np.ndarray, im2: np.ndarray, step_size=10,
             A = np.column_stack((Ix_windowed.flatten(), Iy_windowed.flatten()))
             b = -np.expand_dims(It_windowed.flatten(), axis=1)  # subtract a dimension
 
-            ATA = np.dot(A.T, A)  # A.T it is the transpose matrix of A, and we calculate the matrixes multiplication
+            ATA = np.dot(A.T, A)  # A.T it is the transpose matrix of A, and we calculate the matrix multiplication
             ATA_eig_vals = np.linalg.eigvals(
                 ATA)  # numpy function that computes the eigenvalues of matrix. I love python!!
 
@@ -288,7 +288,7 @@ def findHighestCorrelation(correlation: np.ndarray, im2_shape: tuple) -> tuple:
     param im2_shape: Shape of the second image.
     :return: Coordinates of the highest correlation point (x1, y1, x2, y2).
     """
-    # Find index of highest correlation value
+    # Find the highest correlation value
     max_index = np.unravel_index(np.argmax(correlation), correlation.shape)
 
     # Get coordinates of the highest correlation point
@@ -362,15 +362,13 @@ def warpImages(im1: np.ndarray, im2: np.ndarray, T: np.ndarray) -> np.ndarray:
     y, x = np.indices(im2.shape[:2])
     mapped_coords = np.vstack([x.ravel(), y.ravel(), np.ones_like(x.ravel())])
 
-    # Transform the coordinates using the inverse matrix
+    # transform the coordinates using the inverse matrix
     mapped_coords_transformed = np.dot(T_inv, mapped_coords)
     mapped_coords_transformed /= mapped_coords_transformed[2]
 
-    # Extract the transformed x and y coordinates
+    # extract the transformed x and y coordinates
     x_transformed = mapped_coords_transformed[0].reshape(im2.shape[:2])
     y_transformed = mapped_coords_transformed[1].reshape(im2.shape[:2])
-
-    # Perform bilinear interpolation to compute the pixel values in the warped image
     warped_im2 = cv2.remap(im1, x_transformed.astype(np.float32), y_transformed.astype(np.float32), interpolation=cv2.INTER_LINEAR)
     return warped_im2
 
@@ -387,10 +385,10 @@ def gaussianPyr(img: np.ndarray, levels: int = 4) -> List[np.ndarray]:
     :param levels: Pyramid depth
     :return: Gaussian pyramid (list of images)
     """
-    pyrs = [img]  # Create an array to store the pyramid
+    pyrs = [img]  # create an array to store the pyramid
     for _ in range(1, levels):
-        img = cv2.pyrDown(img)  # downsample the image using pyrDown function
-        pyrs.append(img)  # add the downsample image to the pyramid array
+        img = cv2.pyrDown(img)  # down sample the image using pyrDown function
+        pyrs.append(img)  # add the down sample image to the pyramid array
 
     return pyrs
 
