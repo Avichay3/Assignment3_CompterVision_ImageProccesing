@@ -299,7 +299,7 @@ def findTranslationCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :return: Translation matrix by correlation.
     """
     X1, Y1, X2, Y2 = findCorrelation(im1, im2)
-    return np.array([[1, 0, (X2 - X1 - 1)], [0, 1, (Y2 - Y1 - 1)], [0, 0, 1]], dtype=np.float)
+    return np.array([[1, 0, (X2 - X1 - 1)], [0, 1, (Y2 - Y1 - 1)], [0, 0, 1]], dtype=float)
 
 
 def getAngle(point1, point2):
@@ -321,7 +321,7 @@ def findRigidCorr(im1: np.ndarray, im2: np.ndarray) -> np.ndarray:
     :param im2: image 1 after Rigid.
     :return: Rigid matrix by correlation.
     """
-    min_error = np.float('inf')
+    min_error = float('inf')
     best_rotation_mat = best_rotated_img = 0
     # for every angle between 0 and 359 we calculate the correlation.
     # and we find the best angle by checking the correlation.
