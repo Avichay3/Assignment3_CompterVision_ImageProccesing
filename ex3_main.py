@@ -37,7 +37,7 @@ def displayOpticalFlow(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     plt.show()
 
 
-def displayOpticalFlowh(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
+def displayOpticalFlowHierarch(img: np.ndarray, pts: np.ndarray, uvs: np.ndarray):
     fig, ax = plt.subplots()
     ax.imshow(img, cmap='gray')
     ax.quiver(pts[:, 0], pts[:, 1], uvs[:, 0], uvs[:, 1], color='r')
@@ -51,7 +51,7 @@ def hierarchicalkDemo(img_path):
     ADD TEST
     :param img_path: Image input
     :return:
-
+\
     """
     print("---------------------Hierarchical LK Demo-----------------------")
     img_1 = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2GRAY)
@@ -68,7 +68,7 @@ def hierarchicalkDemo(img_path):
 
     uv, pts = opticalFlowPyrLK(img_1.astype(np.float32), img_2.astype(np.float32), 4, stepSize=20, winSize=5)
     displayOpticalFlow(img_1, pts, uv)
-    displayOpticalFlowh(img_1, pts, uv)
+    displayOpticalFlowHierarch(img_1, pts, uv)
 
 
 def compareLK(img_path):
@@ -193,9 +193,7 @@ def blendDemo():
     im1 = cv2.cvtColor(cv2.imread('input/sunset.jpg'), cv2.COLOR_BGR2RGB) / 255
     im2 = cv2.cvtColor(cv2.imread('input/cat.jpg'), cv2.COLOR_BGR2RGB) / 255
     mask = cv2.cvtColor(cv2.imread('input/mask_cat.jpg'), cv2.COLOR_BGR2RGB) / 255
-
     n_blend, im_blend = pyrBlend(im1, im2, mask, 4)
-
     f, ax = plt.subplots(2, 3)
     ax[0, 0].imshow(im1)
     ax[0, 1].imshow(im2)
@@ -203,9 +201,7 @@ def blendDemo():
     ax[1, 0].imshow(n_blend)
     ax[1, 1].imshow(np.abs(n_blend - im_blend))
     ax[1, 2].imshow(im_blend)
-
     plt.show()
-
     cv2.imwrite('sunset_cat.png', cv2.cvtColor((im_blend * 255).astype(np.uint8), cv2.COLOR_RGB2BGR))
 
 
